@@ -2,6 +2,9 @@
 
 namespace RedSevenGameBase
 {
+    /// <summary>
+    /// Enumeration <c>Numbers</c> models a list of numbers that can be used as cards numbers in the Red Seven game.
+    /// </summary>
     enum Numbers
     {
         One = 1,
@@ -13,6 +16,12 @@ namespace RedSevenGameBase
         Seven = 7
     }
 
+    /// <summary>
+    /// Enumeration <c>Colors</c> models a list of colors that can be used as cards colors in the Red Seven game.
+    /// </summary>
+    /// <remarks>
+    /// Each enumeration member is mapped to a character that represents a color in the console.
+    /// </remarks>
     enum Colors
     { 
         Red = 'R',
@@ -24,9 +33,15 @@ namespace RedSevenGameBase
         Purple = 'P'
     }
 
+    /// <summary>
+    /// Structure represents a color of a card of the Red Seven game along with it's value that is used to compare cards by a color.
+    /// </summary>
     struct Color
     {
-        private static Dictionary<Colors, int> _colorsSortOrder = new Dictionary<Colors, int> 
+        /// <summary>
+        /// A mapping between colors and their comparable values.
+        /// </summary>
+        private static readonly Dictionary<Colors, int> _colorsSortOrder = new Dictionary<Colors, int> 
         { 
             { Colors.Red, 700 },
             { Colors.Orange, 600 },
@@ -37,27 +52,73 @@ namespace RedSevenGameBase
             { Colors.Purple, 100 },
         };
 
-        public char Name { get; private set; }
+        /// <summary>
+        /// Property represents a color from the <c>Colors</c> enumeration which is a set of characters. 
+        /// </summary>
+        public Colors Name { get; private set; }
+        /// <summary>
+        /// Property stores a comparable value of a color.
+        /// </summary>
         public int Value { get; private set; }
 
+        /// <summary>
+        /// Creates an instance of <c>Color</c> from a <c>Colors</c> enumeration member.
+        /// </summary>
+        /// <param name="color"><c>Colors</c> enumeration member.</param>
         public Color(Colors color)
         {
-            this.Name = (char)color;
+            this.Name = color;
             this.Value = GetColorsValue(color);
         }
 
+        /// <summary>
+        /// Creates an instance of <c>Color</c> from a color's name that should be a part of the <c>Colors</c> enumeration.
+        /// </summary>
+        /// <param name="colorName">Color's name.</param>
+        public Color(char colorName) : this((Colors)Enum.ToObject(typeof(Colors), colorName))
+        {
+
+        }
+
+        /// <summary>
+        /// Returns a comparable value of a color.
+        /// </summary>
+        /// <param name="color">Color.</param>
+        /// <returns>Comparable value of a color.</returns>
+        /// <exception cref="InvalidOperationException">Throws an exception if there are no value for the color.</exception>
         private static int GetColorsValue(Colors color)
         {
-            if (!_colorsSortOrder.ContainsKey(color))
+            
+            if (!_colorsSortOrder.TryGetValue(color, out var value))
                 throw new InvalidOperationException($"The value is not defined for the color {color}");
 
-            return _colorsSortOrder[color];
+            return value;
         }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Color color &&
+                   Name == color.Name &&
+                   Value == color.Value;
+        }
+
+        public override int GetHashCode() => HashCode.Combine(Name, Value);
     }
 
+    /// <summary>
+    /// Structure models a card from the Red Seven game.
+    /// </summary>
+    /// <param name="color">Color of the card.</param>
+    /// <param name="number">Numeric value of the card.</param>
     struct Card(Colors color, Numbers number) : IComparable<Card>
-    {    
+    {
+        /// <summary>
+        /// Color of the card.
+        /// </summary>
         public Color Color { get; } = new Color(color);
+        /// <summary>
+        /// Numeric value of the card.
+        /// </summary>
         public Numbers Number { get; } = number;             
 
         public int CompareTo(Card other)
@@ -67,37 +128,81 @@ namespace RedSevenGameBase
             return numberComparisson != 0 ? numberComparisson : this.Color.Value.CompareTo(other.Color.Value);
         }
 
-        public override string ToString() => $"{(byte)Number} {Color.Name}";
+        public override bool Equals(object? obj)
+        {
+            return obj is Card card &&
+                   EqualityComparer<Color>.Default.Equals(Color, card.Color) &&
+                   Number == card.Number;
+        }
+
+        public override string ToString() => $"{(int)Number} {(char)Color.Name}";
+
+        public override int GetHashCode() => HashCode.Combine(Number, Color);
     }
 
+    /// <summary>
+    /// Models a combination of cards from the Red Seven game.
+    /// </summary>
     struct CardCombination
     {
+        /// <summary>
+        /// List of cards in the combination.
+        /// </summary>
         private List<Card> _cards;
+        /// <summary>
+        /// The highest card in the combination.
+        /// </summary>
         private Card? _highestCard;
 
+        /// <summary>
+        /// The highest card in the combination.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Throws if there is no highest card that is possible if the combination is empty.</exception>
         public Card HighestCard
         {
             get
             {
-                if (_highestCard.HasValue) 
-                    return _highestCard.Value;
+                if (!_highestCard.HasValue)
+                    throw new InvalidOperationException("There is no highest card in the card combination.");
 
-                throw new InvalidOperationException("There is no highest card in the card combination.");
+                return _highestCard.Value;                
             }
         }
 
+        /// <summary>
+        /// Creates an instance of the <c>CardCombination</c> structure.
+        /// </summary>
         public CardCombination()
         {
             _cards = new List<Card>();
             _highestCard = null;
         }
 
+        /// <summary>
+        /// Adds a card to the combination.
+        /// </summary>
+        /// <param name="card">Card to add to the combination.</param>
+        /// <remarks>
+        /// While adding a card there is also a check to define the highest card of the combination performing.
+        /// </remarks>
         public void Add(Card card)
         {
             _cards.Add(card);
 
             if (!_highestCard.HasValue || _highestCard.Value.CompareTo(card) < 0)
                 _highestCard = card;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is CardCombination combination &&
+                   EqualityComparer<List<Card>>.Default.Equals(_cards, combination._cards) &&
+                   EqualityComparer<Card?>.Default.Equals(_highestCard, combination._highestCard);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_cards, _highestCard);
         }
     }
 
