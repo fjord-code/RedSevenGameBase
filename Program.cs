@@ -38,9 +38,9 @@ namespace RedSevenGameBase
     /// </summary>
     struct Color
     {
-        /// <summary>
+        /// <value>
         /// A mapping between colors and their comparable values.
-        /// </summary>
+        /// </value>
         private static readonly Dictionary<Colors, int> _colorsSortOrder = new Dictionary<Colors, int> 
         { 
             { Colors.Red, 700 },
@@ -52,13 +52,13 @@ namespace RedSevenGameBase
             { Colors.Purple, 100 },
         };
 
-        /// <summary>
+        /// <value>
         /// Property represents a color from the <c>Colors</c> enumeration which is a set of characters. 
-        /// </summary>
+        /// </value>
         public Colors Name { get; private set; }
-        /// <summary>
+        /// <value>
         /// Property stores a comparable value of a color.
-        /// </summary>
+        /// </value>
         public int Value { get; private set; }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace RedSevenGameBase
         public Color(Colors color)
         {
             this.Name = color;
-            this.Value = GetColorsValue(color);
+            this.Value = GetColorValue(color);
         }
 
         /// <summary>
@@ -86,11 +86,13 @@ namespace RedSevenGameBase
         /// <param name="color">Color.</param>
         /// <returns>Comparable value of a color.</returns>
         /// <exception cref="InvalidOperationException">Throws an exception if there are no value for the color.</exception>
-        private static int GetColorsValue(Colors color)
+        private static int GetColorValue(Colors color)
         {
-            
+
             if (!_colorsSortOrder.TryGetValue(color, out var value))
+            {
                 throw new InvalidOperationException($"The value is not defined for the color {color}");
+            }
 
             return value;
         }
@@ -108,18 +110,52 @@ namespace RedSevenGameBase
     /// <summary>
     /// Structure models a card from the Red Seven game.
     /// </summary>
-    /// <param name="color">Color of the card.</param>
-    /// <param name="number">Numeric value of the card.</param>
-    struct Card(Colors color, Numbers number) : IComparable<Card>
+    struct Card : IComparable<Card>
     {
-        /// <summary>
+        /// <value>
         /// Color of the card.
-        /// </summary>
-        public Color Color { get; } = new Color(color);
-        /// <summary>
+        /// </value>
+        public Color Color { get; }
+        /// <value>
         /// Numeric value of the card.
+        /// </value>
+        public Numbers Number { get; }
+
+        /// <summary>
+        /// Creates an instance of the <c>Card</c> structure from the <c>color</c> and <c>number</c>.
         /// </summary>
-        public Numbers Number { get; } = number;             
+        /// <param name="color">Color of the card.</param>
+        /// <param name="number">Numeric value of the card.</param>
+        public Card(Colors color, Numbers number)
+        {
+            Color = new Color(color);
+            Number = number;
+        }
+
+        /// <summary>
+        /// Creates a <c>Card</c> instance from its string representation.
+        /// </summary>
+        /// <param name="card">String representation of the card.</param>
+        /// <remarks>The string representation must contain a number and a color separated by a space, e.g. "1 P", "2 C", ...</remarks>
+        /// <example>
+        /// <code>
+        /// Card card = new Card("7 R");
+        /// </code>
+        /// </example>
+        public Card(string card)
+        {            
+            try
+            {
+                var values = card.Split(' ');
+
+                Number = (Numbers)Enum.ToObject(typeof(Numbers), int.Parse(values[0]));
+                Color = new Color(values[2][0]);
+            }
+            catch 
+            {
+                throw new InvalidOperationException("Invalid card format. The format should be a number and a color separated by a space. E.g.: \"1 R\"");
+            }            
+        }
 
         public int CompareTo(Card other)
         {
@@ -145,25 +181,27 @@ namespace RedSevenGameBase
     /// </summary>
     struct CardCombination
     {
-        /// <summary>
+        /// <value>
         /// List of cards in the combination.
-        /// </summary>
+        /// </value>
         private List<Card> _cards;
-        /// <summary>
+        /// <value>
         /// The highest card in the combination.
-        /// </summary>
+        /// </value>
         private Card? _highestCard;
 
-        /// <summary>
+        /// <value>
         /// The highest card in the combination.
-        /// </summary>
+        /// </value>
         /// <exception cref="InvalidOperationException">Throws if there is no highest card that is possible if the combination is empty.</exception>
         public Card HighestCard
         {
             get
             {
                 if (!_highestCard.HasValue)
+                {
                     throw new InvalidOperationException("There is no highest card in the card combination.");
+                }
 
                 return _highestCard.Value;                
             }
@@ -190,7 +228,9 @@ namespace RedSevenGameBase
             _cards.Add(card);
 
             if (!_highestCard.HasValue || _highestCard.Value.CompareTo(card) < 0)
+            {
                 _highestCard = card;
+            }
         }
 
         public override bool Equals(object? obj)
@@ -204,6 +244,21 @@ namespace RedSevenGameBase
         {
             return HashCode.Combine(_cards, _highestCard);
         }
+    }
+
+    class GameEventArgs : EventArgs
+    {
+        public string? GameMessage { get; }
+
+        public GameEventArgs(string gameMessage)
+        {
+            GameMessage = gameMessage;
+        }
+    }
+
+    interface IGame
+    {
+        public delegate Card GettingCardEventHandler(object sender, GameEventArgs e);
     }
 
     internal class Program
@@ -235,7 +290,9 @@ namespace RedSevenGameBase
         static void AddCardToCombination(ref CardCombination cardCombination, Card card)
         {
             if (_usedCards.Contains(card))
+            {
                 throw new InvalidOperationException("The card is already in use.");
+            }
 
             _usedCards.Add(card);
             cardCombination.Add(card);
@@ -252,7 +309,9 @@ namespace RedSevenGameBase
             var cardCombination = new CardCombination();
 
             for (var i = 0; i < combinationLength; i++)
+            {
                 AddCardFromConsoleToCombination(ref cardCombination);
+            }
 
             return cardCombination;
         }
@@ -275,11 +334,17 @@ namespace RedSevenGameBase
 
             var highestCardsComparisson = firstCombination.HighestCard.CompareTo(secondCombination.HighestCard);
             if (highestCardsComparisson > 0)
+            {
                 Console.WriteLine($"The first combination wins.\n{firstCombination.HighestCard}");
+            }
             else if (highestCardsComparisson == 0)
+            {
                 Console.WriteLine("The game is tied.");
+            }
             else
+            {
                 Console.WriteLine($"The second combination wins.\n{secondCombination.HighestCard}");
+            }
         }
 
         static void Main(string[] args)
