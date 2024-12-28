@@ -72,12 +72,17 @@ namespace RedSevenGameBase
     interface IPresenter
     {
         /// <summary>
-        /// Returns typed data from the presenter.
+        /// Returns a <c>Card</c> instance from the presenter.
         /// </summary>
-        /// <typeparam name="T">Type of data to return.</typeparam>
-        /// <param name="prompt">Prompt to a user to describe the data.</param>
-        /// <returns>Typed data from a user.</returns>
-        public T GetUserInput<T>(string prompt);
+        /// <param name="prompt">Prompt to show.</param>
+        /// <returns><c>Card</c> instance.</returns>
+        public Card GetCard(string prompt);
+        /// <summary>
+        /// Returns a combination length from the presenter.
+        /// </summary>
+        /// <param name="prompt">Prompt to show.</param>
+        /// <returns>Combination length.</returns>
+        public int GetCombinationLength(string prompt);
         /// <summary>
         /// Shows a message by the presenter.
         /// </summary>
@@ -111,8 +116,8 @@ namespace RedSevenGameBase
             game = new G();
             presenter = new P();
 
-            game.GettingCardEventHandler += (object sender, GameEventArgs e) => presenter.GetUserInput<Card>(e.GameMessage);
-            game.GettingCombinationLengthEventHandler += (object sender, GameEventArgs e) => presenter.GetUserInput<int>(e.GameMessage);
+            game.GettingCardEventHandler += (object sender, GameEventArgs e) => presenter.GetCard(e.GameMessage);
+            game.GettingCombinationLengthEventHandler += (object sender, GameEventArgs e) => presenter.GetCombinationLength(e.GameMessage);
             game.SendingMessageEventHandler += (object sender, GameEventArgs e) => presenter.ShowMessage(e.GameMessage);
         }
 
