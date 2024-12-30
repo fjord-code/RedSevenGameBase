@@ -151,9 +151,14 @@ namespace RedSevenGameBase
             try
             {
                 var values = card.Split(' ');
-
+                
                 Number = (Numbers)Enum.ToObject(typeof(Numbers), int.Parse(values[0]));
-                Color = new Color(values[2][0]);
+                if (!Enum.IsDefined<Numbers>(Number))
+                {
+                    throw new InvalidDataException();
+                }
+
+                Color = new Color(values[1][0]);
             }
             catch
             {
@@ -183,7 +188,7 @@ namespace RedSevenGameBase
     /// <summary>
     /// Models a combination of cards from the Red Seven game.
     /// </summary>
-    struct CardCombination
+    class CardCombination
     {
         /// <value>
         /// List of cards in the combination.
@@ -233,6 +238,15 @@ namespace RedSevenGameBase
             }
 
             return _highestCard.Value;
+        }
+
+        /// <summary>
+        /// Clears the card combination.
+        /// </summary>
+        public void Clear()
+        {
+            _highestCard = null;
+            _cards.Clear();
         }
 
         public override bool Equals(object? obj)

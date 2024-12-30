@@ -34,8 +34,8 @@ namespace RedSevenGameBase
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine("Try again!");
+                    ShowMessage(ex.Message);
+                    ShowMessage("Try again!");
                 }
             }
         }
@@ -67,6 +67,40 @@ namespace RedSevenGameBase
         public void ShowMessage(string message)
         {
             Console.WriteLine(message);
+        }
+
+        /// <inheritdoc/>
+        public void FillCardCombination(string combinationName, Func<Card, bool> checkCardCallback, Action<Card> addCardCallback)
+        {
+            ShowMessage($"Input {combinationName} combination.");
+            var combinationLength = 0; 
+            while (true)
+            {
+                combinationLength = GetCombinationLength("Input the combination length: ");
+
+                if (combinationLength > 0)
+                {
+                    break;
+                }
+
+                ShowMessage("The combination length should be greater than 0!");
+            }
+
+            for (int i = 0; i < combinationLength; i++)
+            {
+                while (true)
+                {
+                    var card = GetCard("Input a card (value and color separated by a space): ");
+
+                    if (checkCardCallback(card))
+                    {
+                        addCardCallback(card);
+                        break;
+                    }
+
+                    ShowMessage("Cannot add such a card. Try to add another one.");
+                }
+            }
         }
     }
 }

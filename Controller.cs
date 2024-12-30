@@ -27,15 +27,6 @@ namespace RedSevenGameBase
     }
 
     /// <summary>
-    /// Data request from the game. Called when the game is needed for some data from user.
-    /// </summary>
-    /// <typeparam name="T">Type of data the game receives.</typeparam>
-    /// <param name="sender">Sender of the request.</param>
-    /// <param name="e">Request parameters.</param>
-    /// <returns></returns>
-    delegate T DataRequest<T>(object sender, GameEventArgs e);
-
-    /// <summary>
     /// Message from the game. Called when the game sends a message.
     /// </summary>
     /// <param name="sender">Sender of the message.</param>
@@ -43,22 +34,27 @@ namespace RedSevenGameBase
     delegate void Message(object sender, GameEventArgs e);
 
     /// <summary>
+    /// Fills a card combination with cards.
+    /// </summary>
+    /// <param name="sender">Sender of the event.</param>
+    /// <param name="e">Message parameters.</param>
+    /// <param name="checkCardCallback">Callback that checks if we can add a card to a combination.</param>
+    /// <param name="addCardCallback">Callback that add a card to a combination.</param>
+    delegate void FillCardCombination(object sender, GameEventArgs e, Func<Card, bool> checkCardCallback, Action<Card> addCardCallback);
+
+    /// <summary>
     /// Game API. Members that a game should implement to be able to connect to a presenter.
     /// </summary>
     interface IGame
     {
         /// <summary>
-        /// Fires when the game is getting a card from a presenter.
+        /// Fires when the game is filling a card combination.
         /// </summary>
-        public event DataRequest<Card> GettingCardEventHandler;
-        /// <summary>
-        /// Fires when the game is getting a combination length from a presenter.
-        /// </summary>
-        public event DataRequest<int> GettingCombinationLengthEventHandler;
+        public event FillCardCombination? FillingCardCombinationEventHandler;
         /// <summary>
         /// Fires when the game is sending a message to a presenter.
         /// </summary>
-        public event Message SendingMessageEventHandler;
+        public event Message? SendingMessageEventHandler;
 
         /// <summary>
         /// Starts a game loop.
@@ -72,17 +68,12 @@ namespace RedSevenGameBase
     interface IPresenter
     {
         /// <summary>
-        /// Returns a <c>Card</c> instance from the presenter.
+        /// Fills a card combination by calling related callbacks.
         /// </summary>
-        /// <param name="prompt">Prompt to show.</param>
-        /// <returns><c>Card</c> instance.</returns>
-        public Card GetCard(string prompt);
-        /// <summary>
-        /// Returns a combination length from the presenter.
-        /// </summary>
-        /// <param name="prompt">Prompt to show.</param>
-        /// <returns>Combination length.</returns>
-        public int GetCombinationLength(string prompt);
+        /// <param name="combinationName">Name of the combination to show to user.</param>
+        /// <param name="checkCardCallback">Function that should check whether it possible to add a card or not.</param>
+        /// <param name="addCardCallback">Function that adds a card to a combination.</param>
+        public void FillCardCombination(string combinationName, Func<Card, bool> checkCardCallback, Action<Card> addCardCallback);
         /// <summary>
         /// Shows a message by the presenter.
         /// </summary>
@@ -116,8 +107,9 @@ namespace RedSevenGameBase
             game = new G();
             presenter = new P();
 
-            game.GettingCardEventHandler += (object sender, GameEventArgs e) => presenter.GetCard(e.GameMessage);
-            game.GettingCombinationLengthEventHandler += (object sender, GameEventArgs e) => presenter.GetCombinationLength(e.GameMessage);
+            game.FillingCardCombinationEventHandler += 
+                (object sender, GameEventArgs e, Func<Card, bool> checkCardCallback, Action<Card> addCardCallback) =>
+                    presenter.FillCardCombination(e.GameMessage, checkCardCallback, addCardCallback);
             game.SendingMessageEventHandler += (object sender, GameEventArgs e) => presenter.ShowMessage(e.GameMessage);
         }
 
